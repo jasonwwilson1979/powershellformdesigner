@@ -1,0 +1,14 @@
+# ---------------------------------------------------------------------------
+# Local development override - builds the image from this repo instead of
+# pulling it from GHCR.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
+#
+# Do NOT use this file in Portainer (there is no build context there).
+# ---------------------------------------------------------------------------
+services:
+  ps-form-designer:
+    image: ps-form-designer:local
+    build:
+      context: .
+      dockerfile: Dockerfile

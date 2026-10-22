@@ -1,0 +1,66 @@
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.sqlite3-journal
+/media
+/staticfiles
+
+# NOTE: do NOT ignore static/ or templates/ - they contain designer.js,
+# api-integration.js and designer.html and are required at runtime.
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+.venv/
+
+# Environment
+.env
+!.env.example
+
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup

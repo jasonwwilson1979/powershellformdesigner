@@ -1,0 +1,35 @@
+# Keep the runtime image small - only the Django project is needed.
+
+# Version control / CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# Environment / docs
+.env
+.env.*
+*.md
+
+# Python caches & virtualenvs
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+**/.venv
+**/venv
+**/.pytest_cache
+
+# Local database + collected static (rebuilt inside the image)
+**/db.sqlite3
+**/*.sqlite3
+**/staticfiles
+
+# Compose helper files (not needed in the image)
+docker-compose*.yml
+docker-compose.override.yml
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db

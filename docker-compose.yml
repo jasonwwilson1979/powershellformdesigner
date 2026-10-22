@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+# PowerShell Form Designer - Docker Compose stack (ready for Portainer)
+#
+# Portainer:  Stacks -> Add stack -> Web editor -> paste this file -> Deploy
+#             (or: Stacks -> Repository -> your GitHub repo,
+#                  Compose path = docker-compose.yml)
+#
+# Point APP_IMAGE at the image GitHub Actions publishes for you:
+#     ghcr.io/<github-username>/<repo-name>:latest
+# ---------------------------------------------------------------------------
+services:
+  ps-form-designer:
+    image: ${APP_IMAGE:-ghcr.io/change-me/ps-form-designer:latest}
+    container_name: ps-form-designer
+    restart: unless-stopped
+    ports:
+      # host port : container port
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      # Leave blank to auto-generate + persist a key on the data volume
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      # Comma separated hosts, e.g. "192.168.1.50,designer.example.com"
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+      # Only needed when served through https:// reverse proxy / tunnel
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
+      DJANGO_BEHIND_PROXY: ${DJANGO_BEHIND_PROXY:-0}
+      DJANGO_CORS_ALLOW_ALL: ${DJANGO_CORS_ALLOW_ALL:-1}
+      # Database lives on the volume below, so it survives redeploys
+      SQLITE_PATH: /data/db.sqlite3
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+      # Optional: create the Django admin user on first boot
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ps-form-designer-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  ps-form-designer-data:

@@ -1,2 +1,21 @@
-# Auto detect text files and perform LF normalization
+# Normalise line endings on checkout so the container scripts stay valid.
 * text=auto
+
+# Shell scripts and Docker files MUST use LF line endings, otherwise the
+# container fails with "exec /usr/local/bin/entrypoint.sh: no such file".
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+
+# Python / templates
+*.py            text eol=lf
+*.html          text eol=lf
+*.js            text eol=lf
+*.css           text eol=lf
+
+# Binaries
+*.sqlite3       binary
+*.png           binary
+*.jpg           binary
+*.ico           binary
