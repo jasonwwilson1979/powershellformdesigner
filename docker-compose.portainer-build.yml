@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------------
+# REGISTRY-FREE stack - builds the image from the Git repository itself.
+# Use this if pulling from GHCR is a problem (private package, "denied" errors,
+# no GitHub Actions run yet, air-gapped server, ...).
+#
+# In Portainer:
+#   Stacks -> Add stack -> Repository
+#     Repository URL : https://github.com/<user>/<repo>
+#     Reference      : refs/heads/main
+#     Compose path   : docker-compose.portainer-build.yml
+#   Deploy.  Portainer clones the repo and builds the Dockerfile on the host -
+#   no container registry is contacted.
+#
+# The first build takes a couple of minutes; rebuilds reuse the Docker cache.
+# To force a rebuild after new commits: "Pull and redeploy" (tick Rebuild image).
+#
+# NOTE: this file cannot be used with the Portainer web editor (there is no
+# build context there).
+# ---------------------------------------------------------------------------
+services:
+  ps-form-designer:
+    image: ps-form-designer:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ps-form-designer
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
+      DJANGO_BEHIND_PROXY: ${DJANGO_BEHIND_PROXY:-0}
+      DJANGO_CORS_ALLOW_ALL: ${DJANGO_CORS_ALLOW_ALL:-1}
+      SQLITE_PATH: /data/db.sqlite3
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ps-form-designer-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  ps-form-designer-data:

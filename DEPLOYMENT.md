@@ -21,6 +21,7 @@ GitHub push ──► .github/workflows/docker-publish.yml ──► ghcr.io/<us
 | `docker/entrypoint.sh` | Migrates the DB, collects static files, optional superuser, starts gunicorn. |
 | `docker-compose.yml` | **Portainer-ready** stack: pulls the published image, keeps data on a named volume. |
 | `docker-compose.build.yml` | Local override that builds the image from source instead of pulling. |
+| `docker-compose.portainer-build.yml` | Standalone stack that **builds** from the Git repo inside Portainer - no registry needed (use for `denied` errors). |
 | `.env.example` | Every configurable environment variable with defaults. |
 | `.github/workflows/docker-publish.yml` | CI: smoke-test build + publish to GHCR (amd64/arm64). |
 | `.dockerignore` / `.gitignore` / `.gitattributes` | Keeps the image small, secrets out of git, shell scripts LF. |
@@ -84,6 +85,45 @@ Either:
   - Username: your GitHub username
   - Password: a Personal Access Token (classic) with the `read:packages` scope
 
+### Verify the image really exists (before touching Portainer)
+
+`denied` from the registry almost always means **the image is not there yet**
+or **Portainer is not allowed to see it** - GHCR reports "denied" instead of
+"not found" for images you cannot access.
+
+Check both places before deploying:
+
+1. GitHub -> your repo -> right-hand sidebar -> **Packages** (must show the image),
+   or open `https://github.com/users/<user>/packages/container/<repo-name>`.
+   Nothing there -> the workflow never ran/failed, or nothing was pushed yet.
+2. Repository **Actions** tab -> the run must be green. A red run means no image
+   was published. Re-run with **Re-run all jobs**.
+
+Find the exact tag to use (it must match, character for character):
+
+```bash
+# owner/repo, lower-cased == the image name (works for https:// and git@ remotes)
+url=$(git config --get remote.origin.url)
+url=${url%.git}
+url=${url#*github.com}
+url=${url#[:/]}
+owner=${url%%/*}
+repo=${url##*/}
+echo "ghcr.io/$(printf '%s' "$owner/$repo" | tr '[:upper:]' '[:lower:]'):latest"
+```
+
+Or test the pull on the Docker host itself - this gives the real error:
+
+```bash
+docker logout ghcr.io
+docker pull ghcr.io/<user>/<repo>:latest      # public package -> works anonymously
+docker login ghcr.io -u <github-user>         # private package -> PAT as password
+docker pull ghcr.io/<user>/<repo>:latest
+```
+
+If `docker pull` fails, Portainer will fail too - fix the registry first
+(visibility or credentials), then redeploy.
+
 ## 3. Deploy in Portainer
 
 ### Option A - Web editor (fastest)
@@ -117,6 +157,22 @@ docker run -d --name ps-form-designer \
   --restart unless-stopped \
   ghcr.io/<user>/<repo>:latest
 ```
+
+### Option D - Build inside Portainer (no registry at all)
+
+Use this when GHCR pulls are blocked ("denied"), the package is private and you
+don't want to hand Portainer a token, or Actions hasn't published yet.
+
+1. Portainer -> **Stacks** -> **Add stack** -> **Repository**.
+2. Repository URL: `https://github.com/<user>/<repo>` (add credentials if private).
+3. Reference: `refs/heads/main`.
+4. **Compose path**: `docker-compose.portainer-build.yml`
+5. **Deploy the stack**. Portainer clones the repo and builds the `Dockerfile`
+   on the Docker host - no registry is contacted.
+6. After new commits: **Pull and redeploy** and tick **Rebuild image**.
+
+(This file cannot be pasted into the web editor - the web editor has no build
+context. For a one-off build on any host, use Option C's `docker build`.)
 
 ### Behind a reverse proxy / HTTPS
 
@@ -224,6 +280,7 @@ Health endpoint used by Docker/Portainer: `GET /healthz/` -> `{"status": "ok"}`.
 
 | Symptom | Fix |
 | --- | --- |
+| Portainer: `error from registry: denied` | The image doesn't exist or Portainer can't read it. Push to GitHub and wait for a green Actions run, fix the `APP_IMAGE` name (it must be `ghcr.io/<user>/<repo>:latest`, lower-case), make the package public, or add `ghcr.io` credentials - see [Verify the image really exists](#verify-the-image-really-exists-before-touching-portainer). Fastest workaround: [Option D](#option-d---build-inside-portainer-no-registry-at-all). |
 | Portainer: `pull access denied` / `unauthorized` | Package is private - make it public or add `ghcr.io` credentials with a `read:packages` PAT. |
 | Action fails pushing to GHCR | Repo **Settings -> Actions -> General -> Workflow permissions** must allow read/write (the workflow already requests `packages: write`). |
 | `DisallowedHost` in the logs | Add the host/IP you browse with to `DJANGO_ALLOWED_HOSTS`. |

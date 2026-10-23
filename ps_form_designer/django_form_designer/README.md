@@ -16,6 +16,8 @@ container:
 
 - `Dockerfile` - gunicorn image (non-root, healthcheck, WhiteNoise static files)
 - `docker-compose.yml` - Portainer-ready stack with a persistent data volume
+- `docker-compose.portainer-build.yml` - same stack, but Portainer **builds** it
+  from this repo (no container registry involved - use if GHCR returns `denied`)
 - `.github/workflows/docker-publish.yml` - publishes `ghcr.io/<user>/<repo>` on push
 
 See **[DEPLOYMENT.md](../../DEPLOYMENT.md)** for the full walkthrough
